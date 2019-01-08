@@ -13,6 +13,7 @@ target 'test' do
   pod 'RxSwiftExt'
   pod 'RxDataSources'
   pod 'RxCocoa'
+  pod 'RxAlamofire'
   pod 'SwiftyJSON'
   pod 'MBProgressHUD'
   pod 'SDWebImage'

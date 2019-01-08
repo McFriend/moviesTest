@@ -16,10 +16,10 @@ import Alamofire
 class DiscoverViewModel: BaseViewModel {
     var items = Variable<[BaseCollectionViewCellViewModel]>([])
     var page = Variable<Page>(Page.none)
-    var currentRequest = Variable<Request?>(nil)
-    var controller: MainScreenController?
-    var selectionHandler: ((MovieModel)->())?
-    
+    var apiManager = ApiManager()
+    var selectedMovie = Variable<MovieModel?>(nil)
+    var error = Variable<Error?>(nil)
+
     override init() {
         super.init()
         refreshAction()
@@ -29,49 +29,41 @@ class DiscoverViewModel: BaseViewModel {
     @objc func refreshAction()
     {
         self.page.value = Page.none
-        self.currentRequest.value?.cancel()
-        self.currentRequest.value = ApiManager.shared.discoverMovies(page: 1) { [weak self] (success, page, movies, error) in
-            self?.controller?.handleError(error: error)
-            guard error == nil, self != nil, movies != nil else { return }
-            self?.page.value = page
-            self?.items.value = movies!.generateCollectionViewPreviewCells()
-            self?.currentRequest.value = nil
-        }
+        apiManager.discoverMovies(page: 1).subscribe(onNext: { (success, page, movies, error) in
+            self.error.value = error
+            guard error == nil, movies != nil else { return }
+            self.page.value = page
+            DispatchQueue.global(qos: .userInitiated).async {
+                self.items.value = movies?.generateCollectionViewPreviewCells() ?? []
+            }
+        }, onError: { (error) in
+            self.error.value = error
+        }, onCompleted: nil, onDisposed: nil).disposed(by: apiManager.disposeBag)
+        
     }
     
     func loadNextPage()
     {
         let maxPageIndex = self.page.value.totalPages - 1
         guard self.page.value.currentPage < maxPageIndex else { return }
-        self.currentRequest.value?.cancel()
-        self.currentRequest.value = ApiManager.shared.discoverMovies(page: self.page.value.currentPage + 1) { [weak self] (success, page, movies, error) in
-            self?.controller?.handleError(error: error)
-            guard error == nil, self != nil, movies != nil else { return }
-            self?.page.value = page
-            self?.items.value.append(contentsOf: movies!.generateCollectionViewPreviewCells())
-            self?.currentRequest.value = nil
-        }
-    }
-}
-
-extension DiscoverViewModel: UICollectionViewDelegate {
-    func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath) {
-        if indexPath.item == items.value.count - 1 {
-            loadNextPage()
-        }
-    }
-    
-    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        collectionView.deselectItem(at: indexPath, animated: true)
-        if let item = items.value[indexPath.item] as? MoviePreviewCellViewModel {
-            selectionHandler?(item.movie)
-        }
+        apiManager.discoverMovies(page: self.page.value.currentPage + 1)
+            .subscribe(onNext: { (success, page, movies, error) in
+            self.error.value = error
+            guard error == nil, movies != nil else { return }
+            self.page.value = page
+            DispatchQueue.global(qos: .userInitiated).async {
+                self.items.value.append(contentsOf: movies?.generateCollectionViewPreviewCells() ?? [])
+            }
+        }, onError: { (error) in
+            self.error.value = error
+        }, onCompleted: nil, onDisposed: nil).disposed(by: apiManager.disposeBag)
     }
 }
 
 class DiscoverView: UIView {
     var viewModel: DiscoverViewModel
     var collectionView: UICollectionView!
+    var disposeBag = DisposeBag()
     
     init (viewModel: DiscoverViewModel) {
         self.viewModel = viewModel
@@ -90,7 +82,13 @@ class DiscoverView: UIView {
         addSubview(collectionView)
         collectionView.backgroundColor = .white
         collectionView.register(MoviePreviewCell.self, forCellWithReuseIdentifier: MoviePreviewCell.cellIdentifier)
-        collectionView.delegate = viewModel
+        collectionView.rx.modelSelected(MoviePreviewCellViewModel.self)
+            .subscribe { (event) in
+                if let item = event.element {
+                    self.viewModel.selectedMovie.value = item.movie
+                }
+            }.disposed(by: viewModel.disposeBag)
+        collectionView.rx.setDelegate(self).disposed(by: disposeBag)
     }
     
     
@@ -109,11 +107,23 @@ class DiscoverView: UIView {
     }
     
     func configureViewModel() {
-        viewModel.items.asObservable().bind(to: collectionView.rx.items(cellIdentifier: MoviePreviewCell.cellIdentifier)) { (index, item, cell) in
+        viewModel.items.asObservable().observeOn(MainScheduler.instance).bind(to: collectionView.rx.items(cellIdentifier: MoviePreviewCell.cellIdentifier)) { (index, item, cell) in
             DispatchQueue.main.async {
                 guard let cell = cell as? MoviePreviewCell, let movieItem = item as? MoviePreviewCellViewModel else { return }
                 cell.configure(with: movieItem)
             }
             }.disposed(by: viewModel.disposeBag)
+    }
+}
+
+extension DiscoverView: UICollectionViewDelegate {
+    func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath) {
+        if indexPath.item == viewModel.items.value.count - 1 {
+            viewModel.loadNextPage()
+        }
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        collectionView.deselectItem(at: indexPath, animated: true)
     }
 }

@@ -16,14 +16,15 @@ import MBProgressHUD
 
 class MainScreenController: BaseViewController {
     var tableView = UITableView(frame: .zero, style: .plain)
-    let discoverView = DiscoverView(viewModel: DiscoverViewModel())
+    var discoverView: DiscoverView
     let searchBar = UISearchBar(frame: .zero)
     var viewModel: MainScreenViewModel
+    var disposeBag = DisposeBag()
     
-    init (viewModel: MainScreenViewModel) {
+    init (viewModel: MainScreenViewModel, discoverViewModel: DiscoverViewModel) {
         self.viewModel = viewModel
+        self.discoverView = DiscoverView(viewModel: discoverViewModel)
         super.init(nibName: nil, bundle: nil)
-        viewModel.controller = self
     }
     
     required init?(coder aDecoder: NSCoder) {
@@ -39,20 +40,25 @@ class MainScreenController: BaseViewController {
         view.addSubview(searchBar)
         searchBar.sizeToFit()
         view.addSubview(discoverView)
-        discoverView.viewModel.controller = self
-        discoverView.viewModel.selectionHandler = { [weak self] movie in
-            self?.showDetailedMovie(movie)
-        }
         discoverView.frame.size.height = 156
         tableView.backgroundColor = .white
         view.addSubview(tableView)
         tableView.register(MovieTableViewCell.self, forCellReuseIdentifier: MovieTableViewCell.cellIdentifier)
         tableView.refreshControl = UIRefreshControl()
         tableView.refreshControl?.addTarget(viewModel, action: #selector(MainScreenViewModel.refreshAction(sender:)), for: .valueChanged)
-        tableView.delegate = viewModel
         tableView.tableHeaderView = discoverView
         tableView.tableFooterView = UIView(frame: .zero)
         tableView.keyboardDismissMode = .onDrag
+        
+        tableView.rx.modelSelected(MovieTableViewCellViewModel.self)
+            .subscribe { (event) in
+                if let item = event.element {
+                    self.showDetailedMovie(item.movie)
+                }
+            }.disposed(by: viewModel.disposeBag)
+        
+        tableView.rx.setDelegate(self).disposed(by: disposeBag)
+        
         searchBar.placeholder = "Поиск"
     }
     
@@ -89,12 +95,46 @@ class MainScreenController: BaseViewController {
         searchBar.rx.searchButtonClicked.bind {
             self.searchBar.resignFirstResponder()
         }.disposed(by: viewModel.disposeBag)
-        viewModel.items.asObservable().bind(to: tableView.rx.items(cellIdentifier: MovieTableViewCell.cellIdentifier)) { (index, item, cell) in
-            DispatchQueue.main.async {
+        viewModel.items
+            .asObservable()
+            .observeOn(MainScheduler.instance)
+            .bind(to: tableView.rx.items(cellIdentifier: MovieTableViewCell.cellIdentifier)) { (index, item, cell) in
                 guard let cell = cell as? MovieTableViewCell, let movieItem = item as? MovieTableViewCellViewModel else { return }
                 cell.configure(with: movieItem)
-            }
             }.disposed(by: viewModel.disposeBag)
-        viewModel.title.asObservable().bind(to: self.rx.title).disposed(by: viewModel.disposeBag)
+        viewModel.error
+            .asObservable()
+            .observeOn(MainScheduler.instance)
+            .bind { (error) in
+                self.handleError(error: error)
+        }.disposed(by: viewModel.disposeBag)
+        
+        discoverView.viewModel.selectedMovie
+            .asObservable()
+            .observeOn(MainScheduler.instance)
+            .bind { (movieModel) in
+                guard let movie = movieModel else { return }
+                self.showDetailedMovie(movie)
+            }.disposed(by: viewModel.disposeBag)
+
+        viewModel.title
+            .asObservable()
+            .bind(to: self.rx.title)
+            .disposed(by: viewModel.disposeBag)
+    }
+}
+
+extension MainScreenController: UITableViewDelegate {
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        return viewModel.items.value[indexPath.row].item.size.height
+    }
+    
+    func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
+        if indexPath.row == viewModel.items.value.count - 1 {
+            viewModel.loadNextPage()
+        }
+    }
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
     }
 }

@@ -8,14 +8,12 @@
 
 import Foundation
 import SwiftyJSON
-import RealmSwift
-import Realm
 
 class ApiParser {
     
-    class func parseMovies(json: JSON) -> List<MovieModel>
+    class func parseMovies(json: JSON) -> Array<MovieModel>
     {
-        let movies = List<MovieModel>()
+        var movies = Array<MovieModel>()
         for movieJSON in json.arrayValue
         {
             movies.append(parseMovie(json: movieJSON))
@@ -48,10 +46,6 @@ class ApiParser {
         {
             movie.genre_ids.append(genre_id.intValue)
         }
-        try? RealmManager.realm.write {
-            RealmManager.realm.add(movie, update: true)
-        }
-        RealmManager.realm.refresh()
         return movie
     }
 }

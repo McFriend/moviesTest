@@ -19,8 +19,6 @@
 		F560C9A021CE959700EFE9B8 /* MovieModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F560C99E21CE959700EFE9B8 /* MovieModel.swift */; };
 		F560C9A221CE9B7700EFE9B8 /* ApiParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = F560C9A121CE9B7700EFE9B8 /* ApiParser.swift */; };
 		F560C9A321CE9B7700EFE9B8 /* ApiParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = F560C9A121CE9B7700EFE9B8 /* ApiParser.swift */; };
-		F560C9A521CE9BD700EFE9B8 /* RealmManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F560C9A421CE9BD700EFE9B8 /* RealmManager.swift */; };
-		F560C9A621CE9BD700EFE9B8 /* RealmManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F560C9A421CE9BD700EFE9B8 /* RealmManager.swift */; };
 		F560C9A921CE9EFA00EFE9B8 /* BaseViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F560C9A821CE9EFA00EFE9B8 /* BaseViewController.swift */; };
 		F560C9AA21CE9EFB00EFE9B8 /* BaseViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F560C9A821CE9EFA00EFE9B8 /* BaseViewController.swift */; };
 		F5A750D421CEA044004B6034 /* BaseViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5A750D321CEA044004B6034 /* BaseViewModel.swift */; };
@@ -83,7 +81,6 @@
 		F560C99A21CE950A00EFE9B8 /* ApiManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiManager.swift; sourceTree = "<group>"; };
 		F560C99E21CE959700EFE9B8 /* MovieModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MovieModel.swift; sourceTree = "<group>"; };
 		F560C9A121CE9B7700EFE9B8 /* ApiParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiParser.swift; sourceTree = "<group>"; };
-		F560C9A421CE9BD700EFE9B8 /* RealmManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RealmManager.swift; sourceTree = "<group>"; };
 		F560C9A821CE9EFA00EFE9B8 /* BaseViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaseViewController.swift; sourceTree = "<group>"; };
 		F5A750D321CEA044004B6034 /* BaseViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaseViewModel.swift; sourceTree = "<group>"; };
 		F5A750D621CEA2DC004B6034 /* Errors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Errors.swift; sourceTree = "<group>"; };
@@ -200,7 +197,6 @@
 		F560C99D21CE958900EFE9B8 /* Models */ = {
 			isa = PBXGroup;
 			children = (
-				F560C9A421CE9BD700EFE9B8 /* RealmManager.swift */,
 				F560C99E21CE959700EFE9B8 /* MovieModel.swift */,
 			);
 			path = Models;
@@ -424,6 +420,7 @@
 				"${BUILT_PRODUCTS_DIR}/MBProgressHUD/MBProgressHUD.framework",
 				"${BUILT_PRODUCTS_DIR}/Realm/Realm.framework",
 				"${BUILT_PRODUCTS_DIR}/RealmSwift/RealmSwift.framework",
+				"${BUILT_PRODUCTS_DIR}/RxAlamofire/RxAlamofire.framework",
 				"${BUILT_PRODUCTS_DIR}/RxAtomic/RxAtomic.framework",
 				"${BUILT_PRODUCTS_DIR}/RxCocoa/RxCocoa.framework",
 				"${BUILT_PRODUCTS_DIR}/RxDataSources/RxDataSources.framework",
@@ -443,6 +440,7 @@
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/MBProgressHUD.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Realm.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RealmSwift.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RxAlamofire.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RxAtomic.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RxCocoa.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RxDataSources.framework",
@@ -467,7 +465,6 @@
 				F5A7510621D0EB0C004B6034 /* MoviePreviewCell.swift in Sources */,
 				F560C99F21CE959700EFE9B8 /* MovieModel.swift in Sources */,
 				F560C9A221CE9B7700EFE9B8 /* ApiParser.swift in Sources */,
-				F560C9A521CE9BD700EFE9B8 /* RealmManager.swift in Sources */,
 				F5A750E921CEAE3A004B6034 /* BaseTableViewItem.swift in Sources */,
 				F5A750FD21CFE816004B6034 /* DetailMovieViewModel.swift in Sources */,
 				F5A750D421CEA044004B6034 /* BaseViewModel.swift in Sources */,
@@ -495,7 +492,6 @@
 				F5A7510721D0EB0C004B6034 /* MoviePreviewCell.swift in Sources */,
 				F560C9A021CE959700EFE9B8 /* MovieModel.swift in Sources */,
 				F560C9A321CE9B7700EFE9B8 /* ApiParser.swift in Sources */,
-				F560C9A621CE9BD700EFE9B8 /* RealmManager.swift in Sources */,
 				F5A750EA21CEAE3A004B6034 /* BaseTableViewItem.swift in Sources */,
 				F5A750FE21CFE816004B6034 /* DetailMovieViewModel.swift in Sources */,
 				F5A750D521CEA044004B6034 /* BaseViewModel.swift in Sources */,

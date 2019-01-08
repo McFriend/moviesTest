@@ -7,8 +7,6 @@
 //
 
 import UIKit
-import RealmSwift
-import Realm
 import SDWebImage
 
 class MovieTableViewCellViewModel: BaseTableViewCellViewModel {
@@ -21,15 +19,9 @@ class MovieTableViewCellViewModel: BaseTableViewCellViewModel {
         let cellClass = MovieTableViewCell.self
         self.item = BaseTableViewItem.init(cellIdentifier: String(describing: cellClass), cellType: cellClass, size: calculateSize(movie: movie))
     }
-    func recalculateSizeAsync(_ onCompletion: @escaping (()->()))
+    func recalculateSize()
     {
-        let movieRef = ThreadSafeReference(to: movie)
-        DispatchQueue.global(qos: .background).async {
-            let realm = try! Realm()
-            guard let movieSafe = realm.resolve(movieRef) else { return; }
-            self.item.size = self.calculateSize(movie: movieSafe)
-            onCompletion()
-        }
+        self.item.size = self.calculateSize(movie: self.movie)
     }
     private func calculateSize(movie: MovieModel) -> CGSize
     {

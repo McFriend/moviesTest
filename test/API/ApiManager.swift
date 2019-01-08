@@ -8,13 +8,14 @@
 
 import Foundation
 import SwiftyJSON
-import Realm
-import RealmSwift
 import Alamofire
+import RxAlamofire
+import RxSwift
+import RxCocoa
 
-typealias SuccessResultHandler = (Bool) //Operation completed with success?
-typealias MoviesResultHandler = ((Bool, Page, List<MovieModel>?, Error?) -> ()) //Operation completed with success? / Page number / List of movies
-typealias RetryResultHandler = (URLRequest?, (()->())?, (()->())?) //URL request, success handler, failure handler
+typealias SuccessResult = (Bool) //Operation completed with success?
+typealias MoviesResult = (Bool, Page, Array<MovieModel>?, Error?) //Operation completed with success? / Page number / List of movies
+typealias RetryResult = (URLRequest?, (()->())?, (()->())?) //URL request, success handler, failure handler
 
 struct Page {
     var currentPage = 0
@@ -33,62 +34,57 @@ struct Page {
 }
 
 class ApiManager {
-    static let shared = ApiManager()
     static let baseURL = "https://api.themoviedb.org"
     static let imagesBaseURL = "https://image.tmdb.org/t/p/w500"
     static let apiEndpoint = "/3/"
     private static let apiKey = "50c97de568c983d931c1d269481c0870"
     public static let networkReachabilityManager = Alamofire.NetworkReachabilityManager(host: "www.google.com")
     let sessionManager = SessionManager()
+    var disposeBag = DisposeBag()
+    
     init() {
         sessionManager.retrier = RetryHandler()
-        
     }
     private func basicParams() -> Parameters {
         return ["api_key":ApiManager.apiKey, "language":"ru-RU"]
     }
     
-    func discoverMovies(page: Int, _ completion: @escaping MoviesResultHandler) -> Request
+    func discoverMovies(page: Int) -> Observable<MoviesResult>
     {
+        disposeBag = DisposeBag()
         var params = basicParams()
         params["sort_by"] = "popularity.desc"
         params["include_adult"] = true
         params["page"] = page
-        let request = sessionManager.request(ApiEndpoints.discover.urlString + ApiEndpoints.movie.rawValue, method: .get, parameters: params, encoding: URLEncoding.default, headers: nil).responseJSON { (response) in
-            if let error = response.error as NSError?, error.code == -999 {
-                return //Запрос был отменен, не показываем алерт
+        
+        return sessionManager.rx.json(.get, ApiEndpoints.discover.urlString + ApiEndpoints.movie.rawValue, parameters: params, encoding: URLEncoding.default, headers: nil).asObservable().observeOn(ConcurrentDispatchQueueScheduler(qos: .background)).map { (jsonData) -> MoviesResult in
+            let json = JSON(jsonData)
+            guard !json.isEmpty else {
+                let result: MoviesResult = (false, Page.none, nil, ParsingFailedError())
+                return result
             }
-            if response.data != nil {
-                guard let json = try? JSON(data: response.data!) else { completion(false, Page.none, nil, ParsingFailedError()); return }
-                completion(true, Page(json), ApiParser.parseMovies(json: json["results"]), nil)
-            } else {
-                completion(false, Page.none, nil, response.error)
-            }
+            let result: MoviesResult = (true, Page(json), ApiParser.parseMovies(json: json["results"]), nil)
+            return result
         }
-        return request
     }
     
-    func searchMovies(searchText: String, page: Int, _ completion: @escaping MoviesResultHandler) -> Request
+    func searchMovies(searchText: String, page: Int) -> Observable<MoviesResult>
     {
+        disposeBag = DisposeBag()
         var params = basicParams()
         params["query"] = searchText
         params["include_adult"] = true
         params["page"] = page
-        let request = sessionManager.request(ApiEndpoints.searchMovie.urlString, method: .get, parameters: params, encoding: URLEncoding.default, headers: nil).responseJSON { (response) in
-            if let error = response.error as NSError?, error.code == -999 {
-                return //Запрос был отменен, не показываем алерт
+        
+        return sessionManager.rx.json(.get, ApiEndpoints.searchMovie.urlString, parameters: params, encoding: URLEncoding.default, headers: nil).asObservable().observeOn(MainScheduler.instance).map { (jsonData) -> MoviesResult in
+            let json = JSON(jsonData)
+            guard !json.isEmpty else {
+                let result: MoviesResult = (false, Page.none, nil, ParsingFailedError())
+                return result
             }
-            if response.data != nil {
-                guard let json = try? JSON(data: response.data!) else {
-                    completion(false, Page.none, nil, ParsingFailedError())
-                    return
-                }
-                completion(true, Page(json), ApiParser.parseMovies(json: json["results"]), nil)
-            } else {
-                completion(false, Page.none, nil, response.error)
-            }
+            let result: MoviesResult = (true, Page(json), ApiParser.parseMovies(json: json["results"]), nil)
+            return result
         }
-        return request
     }
 }
 
