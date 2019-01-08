@@ -17,7 +17,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         window = UIWindow(frame: UIScreen.main.bounds)
-        let viewController = MainScreenController(viewModel: MainScreenViewModel(), discoverViewModel: DiscoverViewModel())
+        let mainViewModel = MainScreenViewModel()
+        mainViewModel.apiManager = ApiManager()
+        let discoveryViewModel = DiscoverViewModel()
+        discoveryViewModel.apiManager = ApiManager()
+        let viewController = MainScreenController(viewModel: mainViewModel, discoverViewModel: discoveryViewModel)
         let navController = UINavigationController(rootViewController: viewController)
         window!.rootViewController = navController
         window!.makeKeyAndVisible()
